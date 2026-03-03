@@ -3,6 +3,9 @@ from django.db import models
 # Create your models here.
 class Escola(models.Model):
     nome = models.CharField(max_length=100)
+      
+    def __str__(self):
+        return self.nome
 
 class Professor(models.Model):
     nome = models.CharField(max_length=100)
@@ -20,4 +23,4 @@ class Aulas(models.Model):
     professor = models.ForeignKey(Professor, on_delete=models.CASCADE)
     disciplina = models.ForeignKey(Disciplina, on_delete=models.CASCADE)
     dias = models.IntegerField()
-    aulas = models.IntegerField()
+    horarios = models.IntegerField()
