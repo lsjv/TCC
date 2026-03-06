@@ -18,7 +18,7 @@ class Disciplina(models.Model):
     nome = models.CharField(max_length=100)
 
     def __str__(self):
-        return self.nome0)
+        return self.nome
 
 class Turma(models.Model):
     nome = models.CharField(max_length=100)
@@ -28,12 +28,6 @@ class Turma(models.Model):
     def __str__(self):
         return self.nome
 
-class Aula(models.Model):
-    slot = models.ForeignKey(Slot, on_delete=models.CASCADE)
-    turma_disciplina = models.ForeignKey(TurmaDisciplina, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ('slot', 'turma_disciplina')
 
 class TurmaDisciplina(models.Model):
     turma = models.ForeignKey(Turma, on_delete=models.CASCADE)
@@ -43,7 +37,8 @@ class TurmaDisciplina(models.Model):
 
     def __str__(self):
         return f"{self.turma} - {self.disciplina}"
-    
+        
+
 class Slot(models.Model):
     escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
     dia_semana = models.IntegerField()  # 0-4
@@ -57,3 +52,11 @@ class DisponibilidadeProfessor(models.Model):
     professor = models.ForeignKey(Professor, on_delete=models.CASCADE)
     dia_semana = models.IntegerField()
     numero_aula = models.IntegerField()
+    
+class Aula(models.Model):
+    slot = models.ForeignKey(Slot, on_delete=models.CASCADE)
+    turma_disciplina = models.ForeignKey(TurmaDisciplina, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('slot', 'turma_disciplina')
+   
