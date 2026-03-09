@@ -1,62 +1,148 @@
 from django.db import models
 
 # Create your models here.
+
 class Escola(models.Model):
-    nome = models.CharField(max_length=100)
+    """
+    Modelo que representa uma unidade escolar (colégio).
+    É a entidade principal do sistema, pois uma escola pode ter várias turmas
+    e vários horários (slots) disponíveis.
+    """
+    nome = models.CharField(max_length=100)  # Nome da escola (ex: "Colégio São Paulo")
       
     def __str__(self):
+        """Retorna o nome da escola como representação em string"""
         return self.nome
+
 
 class Professor(models.Model):
-    nome = models.CharField(max_length=100)
-    carga_maxima_semana = models.IntegerField(default=20)
+    """
+    Modelo que representa um professor.
+    Cada professor pode lecionar várias disciplinas para diferentes turmas.
+    """
+    nome = models.CharField(max_length=100)  # Nome completo do professor
+    carga_maxima_semana = models.IntegerField(default=20)  # Número máximo de aulas que o professor pode dar por semana
 
     def __str__(self):
+        """Retorna o nome do professor como representação em string"""
         return self.nome
+
 
 class Disciplina(models.Model):
-    nome = models.CharField(max_length=100)
+    """
+    Modelo que representa uma disciplina/matéria escolar.
+    Exemplos: Matemática, Português, História, etc.
+    """
+    nome = models.CharField(max_length=100)  # Nome da disciplina
 
     def __str__(self):
+        """Retorna o nome da disciplina como representação em string"""
         return self.nome
 
+
 class Turma(models.Model):
-    nome = models.CharField(max_length=100)
-    escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
-    turno = models.CharField(max_length=20)  # manhã, tarde, noite
+    """
+    Modelo que representa uma turma/classe de alunos.
+    Cada turma pertence a uma escola específica e tem um turno definido.
+    """
+    nome = models.CharField(max_length=100)  # Nome/identificação da turma (ex: "3º Ano A", "5ª Série B")
+    escola = models.ForeignKey(
+        Escola, 
+        on_delete=models.CASCADE  # Se a escola for deletada, todas as suas turmas também serão deletadas
+    )
+    turno = models.CharField(max_length=20)  # Turno de funcionamento: manhã, tarde ou noite
 
     def __str__(self):
+        """Retorna o nome da turma como representação em string"""
         return self.nome
 
 
 class TurmaDisciplina(models.Model):
-    turma = models.ForeignKey(Turma, on_delete=models.CASCADE)
-    disciplina = models.ForeignKey(Disciplina, on_delete=models.CASCADE)
-    professor = models.ForeignKey(Professor, on_delete=models.CASCADE)
-    aulas_semanais = models.IntegerField()
+    """
+    Modelo de relacionamento entre Turma, Disciplina e Professor.
+    É uma tabela intermediária que define:
+    - Qual disciplina uma turma estuda
+    - Qual professor leciona essa disciplina para essa turma
+    - Quantas aulas semanais essa combinação possui
+    
+    Este é o modelo mais importante para a geração de horários!
+    """
+    turma = models.ForeignKey(
+        Turma, 
+        on_delete=models.CASCADE  # Se a turma for deletada, este relacionamento também é deletado
+    )
+    disciplina = models.ForeignKey(
+        Disciplina, 
+        on_delete=models.CASCADE  # Se a disciplina for deletada, este relacionamento também é deletado
+    )
+    professor = models.ForeignKey(
+        Professor, 
+        on_delete=models.CASCADE  # Se o professor for deletado, este relacionamento também é deletado
+    )
+    aulas_semanais = models.IntegerField()  # Quantidade de aulas desta combinação por semana (ex: 4 aulas de Matemática)
 
     def __str__(self):
+        """Retorna uma string identificando a combinação turma-disciplina"""
         return f"{self.turma} - {self.disciplina}"
         
 
 class Slot(models.Model):
-    escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
-    dia_semana = models.IntegerField()  # 0-4
-    numero_aula = models.IntegerField() # 1,2,3,4...
-    turno = models.CharField(max_length=20)
+    """
+    Modelo que representa um horário disponível na grade da escola.
+    Cada slot é um espaço de tempo que pode ser preenchido com uma aula.
+    Exemplo: Segunda-feira, 1ª aula do turno da manhã.
+    """
+    escola = models.ForeignKey(
+        Escola, 
+        on_delete=models.CASCADE  # Se a escola for deletada, todos os seus slots também são deletados
+    )
+    dia_semana = models.IntegerField()  # Dia da semana: 0=segunda, 1=terça, 2=quarta, 3=quinta, 4=sexta
+    numero_aula = models.IntegerField()  # Posição da aula no dia: 1ª aula, 2ª aula, 3ª aula, etc.
+    turno = models.CharField(max_length=20)  # Turno deste slot (manhã/tarde/noite) - ajuda na filtragem
 
     def __str__(self):
+        """Retorna uma string identificando o slot de horário"""
         return f"Dia {self.dia_semana} - Aula {self.numero_aula}"
     
+
 class DisponibilidadeProfessor(models.Model):
-    professor = models.ForeignKey(Professor, on_delete=models.CASCADE)
-    dia_semana = models.IntegerField()
-    numero_aula = models.IntegerField()
+    """
+    Modelo que controla a disponibilidade dos professores.
+    Define em quais dias e horários específicos cada professor pode dar aula.
+    Se não houver registro para um professor, assume-se que ele está disponível em todos os horários.
+    """
+    professor = models.ForeignKey(
+        Professor, 
+        on_delete=models.CASCADE  # Se o professor for deletado, sua disponibilidade também é deletada
+    )
+    dia_semana = models.IntegerField()  # Dia da semana disponível (0-4)
+    numero_aula = models.IntegerField()  # Número da aula disponível neste dia
     
+    class Meta:
+        # Garante que não haja registros duplicados de disponibilidade
+        unique_together = ('professor', 'dia_semana', 'numero_aula')
+    
+
 class Aula(models.Model):
-    slot = models.ForeignKey(Slot, on_delete=models.CASCADE)
-    turma_disciplina = models.ForeignKey(TurmaDisciplina, on_delete=models.CASCADE)
+    """
+    Modelo que representa uma aula efetivamente alocada na grade horária.
+    Conecta um slot de horário com uma combinação turma-disciplina-professor.
+    Quando o algoritmo de geração de horários executa, ele cria instâncias desta classe.
+    """
+    slot = models.ForeignKey(
+        Slot, 
+        on_delete=models.CASCADE  # Se o slot for deletado, a aula também é deletada
+    )
+    turma_disciplina = models.ForeignKey(
+        TurmaDisciplina, 
+        on_delete=models.CASCADE  # Se a turma-disciplina for deletada, suas aulas também são deletadas
+    )
 
     class Meta:
+        # Garante que não haja duas aulas no mesmo slot com a mesma turma-disciplina
+        # Isso evita conflitos como a mesma turma tendo duas aulas no mesmo horário
         unique_together = ('slot', 'turma_disciplina')
-   
+    
+    def __str__(self):
+        """Retorna uma string identificando a aula alocada"""
+        return f"{self.turma_disciplina} - {self.slot}"
