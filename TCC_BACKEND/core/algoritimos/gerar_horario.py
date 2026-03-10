@@ -58,7 +58,7 @@ def gerar_horario_turma(turma_id):
               turma_disciplina=td,
               slot=slot
             )
-        aulas_criadas += 
+        aulas_criadas += 1
         #se nao tiver conflitos  cria a aula no banco de dados e incrementa o valor ao log
 
     print(f"{aulas_criadas}aulas criadas para{turma.nome}")
