@@ -1,64 +1,145 @@
+from core.models import (
+    Turma,
+    Slot,
+    Aula,
+    TurmaDisciplina
+)
+
 import random
-from core.models import Turma, TurmaDisciplina,Slot,Aula
 
-def gerar_horario_turma(turma_id):
-    turma = Turma.objects.get(id=turma_id) #Recebe um ID de turma e busca no banco de dados o objeto Turma correspondente
 
-    #primeiro pegar as disciplinas das turmas
-    turma_disciplinas= TurmaDisciplina.objects.filter(turma=turma)
+def gerar_horario_escola(escola_id):
+    """
+    Função que gera horários para TODAS as turmas de uma escola.
     
-    #criar lista de aulas
-    aulas_nescessarias = []
+    ATENÇÃO: Esta função TEM PROBLEMAS! Vou destacá-los nos comentários.
+    """
 
-    for td in turma_disciplinas:
-        for _ in range(td.aulas_semanais):
-            aulas_nescessarias.append(td)
-    # Para cada disciplina, adiciona à lista uma entrada para cada aula semanal necessária
+    print("Gerando horários...")
 
-    #Exemplo: se uma disciplina tem 3 aulas por semana, ela aparecerá 3 vezes na lista
+    # ===== PROBLEMA 1: LIMPEZA TOTAL =====
+    # limpa aulas antigas
+    Aula.objects.all().delete()
+    """
+    PROBLEMA: Isso deleta TODAS as aulas do sistema, não apenas da escola!
+    Se houver múltiplas escolas no banco, isso apaga os horários de todas elas.
+    
+    SOLUÇÃO: Deveria filtrar por escola:
+    Aula.objects.filter(turma_disciplina__turma__escola_id=escola_id).delete()
+    """
 
-    #Resultado: uma lista com todas as aulas que precisam ser alocadas na semana'''
+    turmas = Turma.objects.filter(escola_id=escola_id)
 
-    #embaralhar ordem
-    random.shuffle(aulas_nescessarias)
+    slots = list(
+        Slot.objects.filter(escola_id=escola_id)
+    )
 
-    #agora pegar os slots disponiveis pra gerar o horario
-
-
-    slots = list(Slot.objects.all())
+    # embaralha slots para evitar padrões ruins
     random.shuffle(slots)
-    
-    aulas_criadas = 0
 
-    for slot in slots:
+    total_criadas = 0
+
+    # ===== PROBLEMA 2: ORDEM DAS TURMAS =====
+    for turma in turmas:
+        """
+        PROBLEMA: As turmas são processadas em ordem, e as primeiras têm
+        "vantagem" na escolha dos slots. As últimas turmas podem ficar sem opções.
         
-        if not aulas_nescessarias:
-            break
-        
-        td = aulas_nescessarias.pop()
-        #Para cada slot de horário disponível, pega uma aula da lista (usando pop() que remove e retorna o último item)
-        #verificar conflit?
+        SOLUÇÃO: Embaralhar as turmas também:
+        turmas = list(turmas)
+        random.shuffle(turmas)
+        """
 
-        conflito = Aula.objects.filter(
-              turma_disciplina__professor=td.professor,
-              slot=slot
-              ).exists()
-        #Verifica se o professor já tem alguma aula alocada neste mesmo horário
+        print(f"Gerando para turma {turma.nome}")
 
-        #Usa __ para acessar o professor através da relação turma_disciplina
-       
-                 
-        if conflito:
-            aulas_nescessarias.insert(0,td)
-            continue
-        # Se houver conflito, devolve a aula para o início da lista (insert(0, ...))
+        relacoes = TurmaDisciplina.objects.filter(
+            turma=turma
+        ).select_related(
+            "disciplina",
+            "professor"
+        )
 
-        #continue pula para o próximo slot sem criar a aula
-        Aula.objects.create(
-              turma_disciplina=td,
-              slot=slot
-            )
-        aulas_criadas += 1
-        #se nao tiver conflitos  cria a aula no banco de dados e incrementa o valor ao log
+        # ===== PROBLEMA 3: ORDEM DAS DISCIPLINAS =====
+        for rel in relacoes:
+            """
+            PROBLEMA: Mesmo problema - primeiras disciplinas têm vantagem.
+            
+            SOLUÇÃO: Embaralhar as relações também.
+            """
 
-    print(f"{aulas_criadas}aulas criadas para{turma.nome}")
+            aulas_restantes = rel.aulas_semanais
+
+            while aulas_restantes > 0:
+
+                colocado = False
+
+                # ===== PROBLEMA 4: SEMPRE PERCORRE DO INÍCIO =====
+                for slot in slots:
+                    """
+                    PROBLEMA: Cada nova aula começa a busca do PRIMEIRO slot.
+                    Isso causa:
+                    1. Ineficiência - repete verificações
+                    2. Acúmulo nos primeiros horários
+                    
+                    SOLUÇÃO: Começar de onde parou ou usar um índice.
+                    """
+
+                    # slot precisa ser do mesmo turno
+                    if slot.turno != turma.turno:
+                        continue
+
+                    # ===== PROBLEMA 5: CONSULTAS EXCESSIVAS =====
+                    # turma já tem aula nesse horário?
+                    conflito_turma = Aula.objects.filter(
+                        slot=slot,
+                        turma_disciplina__turma=turma
+                    ).exists()
+                    """
+                    PROBLEMA: Isso faz UMA CONSULTA POR SLOT!
+                    Para 50 slots × várias disciplinas × várias turmas = centenas de consultas!
+                    
+                    SOLUÇÃO: Carregar aulas existentes em memória e verificar localmente.
+                    """
+
+                    if conflito_turma:
+                        continue
+
+                    # professor já está ocupado?
+                    conflito_prof = Aula.objects.filter(
+                        slot=slot,
+                        turma_disciplina__professor=rel.professor
+                    ).exists()
+                    """
+                    PROBLEMA: Outra consulta por slot! O número explode.
+                    """
+
+                    if conflito_prof:
+                        continue
+
+                    # criar aula
+                    Aula.objects.create(
+                        slot=slot,
+                        turma_disciplina=rel
+                    )
+
+                    aulas_restantes -= 1
+                    total_criadas += 1
+                    colocado = True
+                    break
+
+                # ===== PROBLEMA 6: SEM RETROCESSO =====
+                if not colocado:
+                    """
+                    PROBLEMA: Quando não consegue alocar, simplesmente desiste.
+                    Não tenta rearranjar aulas já alocadas para liberar espaço.
+                    
+                    Isso é um algoritmo GULOSO sem backtracking - pode falhar
+                    mesmo quando uma solução existe.
+                    """
+                    print(
+                        f"Não foi possível alocar "
+                        f"{rel.disciplina} para {turma.nome}"
+                    )
+                    break
+
+    print(f"Aulas criadas: {total_criadas}")
