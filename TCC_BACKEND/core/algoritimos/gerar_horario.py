@@ -143,3 +143,5 @@ def gerar_horario_escola(escola_id):
                     break
 
     print(f"Aulas criadas: {total_criadas}")
+
+    #___*( ￣皿￣)/#____
