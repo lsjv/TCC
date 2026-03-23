@@ -1,147 +1,118 @@
-from core.models import (
-    Turma,
-    Slot,
-    Aula,
-    TurmaDisciplina
-)
-
-import random
+from core.models import Turma, Slot, Aula, TurmaDisciplina, DisponibilidadeProfessor
+from django.db import transaction
 
 
 def gerar_horario_escola(escola_id):
     """
-    Função que gera horários para TODAS as turmas de uma escola.
-    
-    ATENÇÃO: Esta função TEM PROBLEMAS! Vou destacá-los nos comentários.
+    Gera horários usando backtracking com otimizações de desempenho.
     """
 
-    print("Gerando horários...")
+    # 1. Carregar tudo em memória (elimina o Problema 5 - consultas excessivas)
+    slots = list(Slot.objects.filter(escola_id=escola_id))
+    turmas = list(Turma.objects.filter(escola_id=escola_id))
 
-    # ===== PROBLEMA 1: LIMPEZA TOTAL =====
-    # limpa aulas antigas
-    Aula.objects.all().delete()
-    """
-    PROBLEMA: Isso deleta TODAS as aulas do sistema, não apenas da escola!
-    Se houver múltiplas escolas no banco, isso apaga os horários de todas elas.
-    
-    SOLUÇÃO: Deveria filtrar por escola:
-    Aula.objects.filter(turma_disciplina__turma__escola_id=escola_id).delete()
-    """
-
-    turmas = Turma.objects.filter(escola_id=escola_id)
-
-    slots = list(
-        Slot.objects.filter(escola_id=escola_id)
+    # Disponibilidades: set de (professor_id, dia_semana, numero_aula)
+    disponibilidades = set(
+        DisponibilidadeProfessor.objects
+        .values_list('professor_id', 'dia_semana', 'numero_aula')
     )
 
-    # embaralha slots para evitar padrões ruins
-    random.shuffle(slots)
+    # Expandir relações em lista de "aulas a alocar"
+    # Cada TurmaDisciplina com aulas_semanais=3 vira 3 entradas
+    relacoes = TurmaDisciplina.objects.filter(
+        turma__escola_id=escola_id
+    ).select_related('turma', 'disciplina', 'professor')
 
-    total_criadas = 0
+    tarefas = []
+    for rel in relacoes:
+        for _ in range(rel.aulas_semanais):
+            tarefas.append(rel)
 
-    # ===== PROBLEMA 2: ORDEM DAS TURMAS =====
-    for turma in turmas:
-        """
-        PROBLEMA: As turmas são processadas em ordem, e as primeiras têm
-        "vantagem" na escolha dos slots. As últimas turmas podem ficar sem opções.
-        
-        SOLUÇÃO: Embaralhar as turmas também:
-        turmas = list(turmas)
-        random.shuffle(turmas)
-        """
+    # Ordenar por mais restrito primeiro (MRV - Minimum Remaining Values)
+    # Disciplinas com mais aulas semanais são mais difíceis de alocar
+    tarefas.sort(key=lambda r: -r.aulas_semanais)
 
-        print(f"Gerando para turma {turma.nome}")
+    # Estado compartilhado em memória (evita consultas ao banco durante busca)
+    alocacoes = []  # lista de (slot, turma_disciplina)
+    ocupado_turma  = {}  # slot_id → set de turma_id
+    ocupado_prof   = {}  # slot_id → set de professor_id
 
-        relacoes = TurmaDisciplina.objects.filter(
-            turma=turma
-        ).select_related(
-            "disciplina",
-            "professor"
-        )
+    def pode_alocar(slot, rel):
+        sid = slot.id
 
-        # ===== PROBLEMA 3: ORDEM DAS DISCIPLINAS =====
-        for rel in relacoes:
-            """
-            PROBLEMA: Mesmo problema - primeiras disciplinas têm vantagem.
-            
-            SOLUÇÃO: Embaralhar as relações também.
-            """
+        # Turno compatível
+        if slot.turno != rel.turma.turno:
+            return False
 
-            aulas_restantes = rel.aulas_semanais
+        # Turma já tem aula nesse slot
+        if rel.turma.id in ocupado_turma.get(sid, set()):
+            return False
 
-            while aulas_restantes > 0:
+        # Professor já tem aula nesse slot
+        if rel.professor.id in ocupado_prof.get(sid, set()):
+            return False
 
-                colocado = False
+        # Verificar disponibilidade do professor
+        # Se há registros de disponibilidade, o professor só pode
+        # dar aula nos slots listados
+        if disponibilidades:
+            chave = (rel.professor.id, slot.dia_semana, slot.numero_aula)
+            if chave not in disponibilidades:
+                return False
 
-                # ===== PROBLEMA 4: SEMPRE PERCORRE DO INÍCIO =====
-                for slot in slots:
-                    """
-                    PROBLEMA: Cada nova aula começa a busca do PRIMEIRO slot.
-                    Isso causa:
-                    1. Ineficiência - repete verificações
-                    2. Acúmulo nos primeiros horários
-                    
-                    SOLUÇÃO: Começar de onde parou ou usar um índice.
-                    """
+        return True
 
-                    # slot precisa ser do mesmo turno
-                    if slot.turno != turma.turno:
-                        continue
+    def alocar(slot, rel):
+        sid = slot.id
+        ocupado_turma.setdefault(sid, set()).add(rel.turma.id)
+        ocupado_prof.setdefault(sid, set()).add(rel.professor.id)
+        alocacoes.append((slot, rel))
 
-                    # ===== PROBLEMA 5: CONSULTAS EXCESSIVAS =====
-                    # turma já tem aula nesse horário?
-                    conflito_turma = Aula.objects.filter(
-                        slot=slot,
-                        turma_disciplina__turma=turma
-                    ).exists()
-                    """
-                    PROBLEMA: Isso faz UMA CONSULTA POR SLOT!
-                    Para 50 slots × várias disciplinas × várias turmas = centenas de consultas!
-                    
-                    SOLUÇÃO: Carregar aulas existentes em memória e verificar localmente.
-                    """
+    def desalocar():
+        slot, rel = alocacoes.pop()
+        sid = slot.id
+        ocupado_turma[sid].discard(rel.turma.id)
+        ocupado_prof[sid].discard(rel.professor.id)
 
-                    if conflito_turma:
-                        continue
+    def backtrack(idx):
+        if idx == len(tarefas):
+            return True  # todas as aulas foram alocadas!
 
-                    # professor já está ocupado?
-                    conflito_prof = Aula.objects.filter(
-                        slot=slot,
-                        turma_disciplina__professor=rel.professor
-                    ).exists()
-                    """
-                    PROBLEMA: Outra consulta por slot! O número explode.
-                    """
+        rel = tarefas[idx]
 
-                    if conflito_prof:
-                        continue
+        # Embaralhar slots a cada chamada evita concentração nos primeiros
+        # horários e distribui melhor a grade (resolve Problema 4)
+        import random
+        slots_candidatos = slots[:]
+        random.shuffle(slots_candidatos)
 
-                    # criar aula
-                    Aula.objects.create(
-                        slot=slot,
-                        turma_disciplina=rel
-                    )
+        for slot in slots_candidatos:
+            if pode_alocar(slot, rel):
+                alocar(slot, rel)
+                if backtrack(idx + 1):
+                    return True
+                desalocar()  # ← aqui está o backtracking de verdade
 
-                    aulas_restantes -= 1
-                    total_criadas += 1
-                    colocado = True
-                    break
+        return False  # nenhum slot funcionou para esta tarefa
 
-                # ===== PROBLEMA 6: SEM RETROCESSO =====
-                if not colocado:
-                    """
-                    PROBLEMA: Quando não consegue alocar, simplesmente desiste.
-                    Não tenta rearranjar aulas já alocadas para liberar espaço.
-                    
-                    Isso é um algoritmo GULOSO sem backtracking - pode falhar
-                    mesmo quando uma solução existe.
-                    """
-                    print(
-                        f"Não foi possível alocar "
-                        f"{rel.disciplina} para {turma.nome}"
-                    )
-                    break
+    print(f"Iniciando backtracking: {len(tarefas)} aulas para alocar...")
 
-    print(f"Aulas criadas: {total_criadas}")
+    sucesso = backtrack(0)
 
-    #___*( ￣皿￣)/#____
+    if not sucesso:
+        print("Não foi possível gerar um horário completo.")
+        return False
+
+    # Salvar no banco apenas se tudo funcionou (resolve Problema 1 - deleção parcial)
+    with transaction.atomic():
+        Aula.objects.filter(
+            turma_disciplina__turma__escola_id=escola_id  # só desta escola!
+        ).delete()
+
+        Aula.objects.bulk_create([
+            Aula(slot=slot, turma_disciplina=rel)
+            for slot, rel in alocacoes
+        ])
+
+    print(f"Horário gerado! {len(alocacoes)} aulas criadas.")
+    return True
