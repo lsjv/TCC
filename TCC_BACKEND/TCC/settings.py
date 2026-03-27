@@ -146,6 +146,7 @@ DATABASES = {
         'NAME': 'tcc',
         'USER': 'postgres',
         'PASSWORD': os.environ.get('DB_PASSWORD'),#defina a senha no seu propio pc:)
+        #NÃO PRESTOU NO MEU MAS PODE PRESTAR NO SEU
         'HOST': 'localhost',
         'PORT': '5432',
     }
