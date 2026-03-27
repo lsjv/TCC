@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -132,7 +132,21 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+
 # Pasta global de arquivos estáticos
 STATICFILES_DIRS = [
     BASE_DIR / "static"
 ]
+
+#trem do postgree que tava dando pau no meu pc e tive que fazer(se quiser apagar pode)
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'tcc',
+        'USER': 'postgres',
+        'PASSWORD': os.environ.get('DB_PASSWORD'),#defina a senha no seu propio pc:)
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
