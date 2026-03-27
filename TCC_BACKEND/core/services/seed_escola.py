@@ -62,7 +62,8 @@ def seed():
             escola=escola,
             defaults={'turno': turno}
         )
-
+    #ERROR
+    
     print("Criando slots...")
     for dia in range(5):
         for aula in range(1, 6):

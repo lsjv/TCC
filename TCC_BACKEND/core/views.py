@@ -12,20 +12,16 @@ CORES_DISCIPLINA = {
     "Artes":             {"bg": "#F1EFE8", "border": "#5F5E5A", "text": "#444441"},
 }
 
-
 def grade_turma(request, turma_id):
     turma = get_object_or_404(Turma, id=turma_id)
 
-    # Busca todos os slots da escola dessa turma
-    slots = Slot.objects.filter(
-        escola=turma.escola
-    ).order_by('numero_aula', 'dia_semana')
+    # Pega só os números de aula únicos — deve retornar [1,2,3,4,5]
+    numeros_aula = sorted(
+        Slot.objects.filter(
+            escola=turma.escola
+        ).values_list('numero_aula', flat=True).distinct()
+    )
 
-    # Quantas aulas por dia existem
-    numeros_aula = sorted(slots.values_list('numero_aula', flat=True).distinct())
-    dias = [0, 1, 2, 3, 4]  # seg a sex
-
-    # Busca todas as aulas da turma de uma vez
     aulas_qs = Aula.objects.filter(
         turma_disciplina__turma=turma
     ).select_related(
@@ -34,21 +30,19 @@ def grade_turma(request, turma_id):
         'turma_disciplina__professor'
     )
 
-    # Monta dicionário (dia, numero_aula) → aula
     aulas_dict = {}
     for aula in aulas_qs:
         chave = (aula.slot.dia_semana, aula.slot.numero_aula)
         aulas_dict[chave] = aula
 
-    # Monta a grade: lista de linhas, cada linha tem 5 células (uma por dia)
     grade = []
     for numero in numeros_aula:
         linha = []
-        for dia in dias:
+        for dia in range(5):
             linha.append(aulas_dict.get((dia, numero)))
         grade.append(linha)
 
-    return render(request, 'grade.html', {
+    return render(request, 'core/grade.html', {
         'turma': turma,
         'dias': ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'],
         'grade': grade,
