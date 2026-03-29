@@ -1,9 +1,7 @@
 
 
 
-.side-space {
-    padding: 0px 20px;
-}
+
 /*Estilizando cabeçalho*/
 .header {
     width: 100vw;
@@ -31,10 +29,22 @@
 
 .dividing-line{
     display: flex;
-    height: 4px;
+    height: 2px;
     background-color: rgba(15, 15, 67, 0.575);
 }
 
+/*Descrição do software (tenatndo seguir o design figma KK)*/
+.information-soft {
+    margin: 10px 20px;
+}
+
+.title-software{
+    color: #1F2933;
+}
+
+.subtitle-software {
+   color: #1F2933; 
+}
 /*Arrumando o NAV*/
 a {
     padding: 5px;
@@ -55,5 +65,9 @@ a:hover {
 }
 
 .classes-nav {
+    background-color: #1c1d1d36;
     margin-top: 10px;
+    padding: 10px;
+    border-top: 1px solid rgba(0, 0, 0, 0.494);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.499);
 }

@@ -24,59 +24,58 @@
     </header>
     <span class="dividing-line"></span>
 
+    <div class="information-soft">
+        <h2 class="title-software">Gerenciar horários</h2>
+        <p class="subtitle-software">Organize sua grade de aulas facilmente.</p>
+    </div>
 
-<div class="side-space">
+    <nav class="classes-nav">
+        {% for t in turma.escola.turma_set.all %}
+            <a href="{% url 'grade_turma' t.id %}"
+                class="{% if t.id == turma.id %}ativa{% endif %}">
+                {{ t.nome }}
+            </a>
+        {% endfor %}
+    </nav>
     
-        <nav class="classes-nav">
-            {% for t in turma.escola.turma_set.all %}
-                <a href="{% url 'grade_turma' t.id %}"
-                    class="{% if t.id == turma.id %}ativa{% endif %}">
-                    {{ t.nome }}
-                </a>
-            {% endfor %}
-        </nav>
-    
-    
-        <div class="grade-wrap">
-            <table class="grade">
-                <tr>
-                    <th>Horário</th>
-                    {% for dia in dias %}
-                        <th>{{ dia }}</th>
-                    {% endfor %}
-                </tr>
-    
-                {% for linha in grade %}
-                <tr>
-                    <td class="slot-label">{{ forloop.counter }}ª aula</td>
-    
-                    {% for aula in linha %}
-                    <td>
-                        {% if aula %}
-                            {% with disc=aula.turma_disciplina.disciplina.nome %}
-                            {% with cor=cores_disciplina|get_item:disc %}
-                            <div class="aula-cell"
-                                    style="background:{{ cor.bg }};border-left-color:{{ cor.border }}">
-                                <span class="disc" style="color:{{ cor.text }}">
-                                    {{ disc }}
-                                </span>
-                                <span class="prof" style="color:{{ cor.text }}">
-                                    {{ aula.turma_disciplina.professor.nome }}
-                                </span>
-                            </div>
-                            {% endwith %}
-                            {% endwith %}
-                        {% else %}
-                            <div class="vazia"></div>
-                        {% endif %}
-                    </td>
-                    {% endfor %}
-                </tr>
+    <div class="grade-wrap">
+        <table class="grade">
+            <tr>
+                <th>Horário</th>
+                {% for dia in dias %}
+                    <th>{{ dia }}</th>
                 {% endfor %}
-            </table>
-        </div>
-    
-</div>
+            </tr>
+
+            {% for linha in grade %}
+            <tr>
+                <td class="slot-label">{{ forloop.counter }}ª aula</td>
+
+                {% for aula in linha %}
+                <td>
+                    {% if aula %}
+                        {% with disc=aula.turma_disciplina.disciplina.nome %}
+                        {% with cor=cores_disciplina|get_item:disc %}
+                        <div class="aula-cell"
+                                style="background:{{ cor.bg }};border-left-color:{{ cor.border }}">
+                            <span class="disc" style="color:{{ cor.text }}">
+                                {{ disc }}
+                            </span>
+                            <span class="prof" style="color:{{ cor.text }}">
+                                {{ aula.turma_disciplina.professor.nome }}
+                            </span>
+                        </div>
+                        {% endwith %}
+                        {% endwith %}
+                    {% else %}
+                        <div class="vazia"></div>
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 
 </body>
 </html>
