@@ -1,7 +1,8 @@
 {% load dict_extras %}
 {% load static %}
 
-<link rel="stylesheet" href="{% static 'css/teste.css' %}">
+<link rel="stylesheet" href="{% static 'css/global.css' %}">
+<link rel="stylesheet" href="{% static 'css/grade.css' %}">
 
 
 <!DOCTYPE html>
@@ -10,15 +11,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Grade — Turma {{ turma.nome }}</title>
+    <title class="name-class">Grade — Turma {{ turma.nome }}</title>
     
 </head>
 <body>
 
-    <div class="header">
-        <h1>Grade de Horários — Turma {{ turma.nome }}</h1>
-        <p>{{ turma.escola.nome }} &middot; {{ turma.turno|capfirst }}</p>
-    </div>
+    <span>
+        <div class="header">
+            <h1 class="class-name">Grade de Horários — Turma {{ turma.nome }}</h1>
+            <p class="school-name">{{ turma.escola.nome }} &middot; {{ turma.turno|capfirst }}</p>
+        </div>
+    </span>
+    <span class="dividing-line"></span>
 
     <nav class="turmas-nav">
         {% for t in turma.escola.turma_set.all %}

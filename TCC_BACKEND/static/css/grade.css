@@ -1,0 +1,25 @@
+/*Estilizando cabeçalho*/
+.header {
+    width: 100vw;
+    height: 75px;
+    background-color: rgb(27, 27, 125);
+}
+
+.class-name {
+    padding-top: 15px;
+    text-align: center;
+    font-size: medium;
+    color: white;
+}
+
+.school-name{
+    margin-top: 5px;
+    text-align: center;
+    color: white;
+}
+
+.dividing-line{
+    display: flex;
+    height: 4px;
+    background-color: rgba(15, 15, 67, 0.575);
+}
