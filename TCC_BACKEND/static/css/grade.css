@@ -1,3 +1,9 @@
+
+
+
+.side-space {
+    padding: 0px 20px;
+}
 /*Estilizando cabeçalho*/
 .header {
     width: 100vw;
@@ -13,13 +19,41 @@
 }
 
 .school-name{
-    margin-top: 5px;
+    margin-top: 7px;
     text-align: center;
     color: white;
+}
+
+.study-shift{
+    font-weight: 500;
+    font-style: italic;
 }
 
 .dividing-line{
     display: flex;
     height: 4px;
     background-color: rgba(15, 15, 67, 0.575);
+}
+
+/*Arrumando o NAV*/
+a {
+    padding: 5px;
+    text-decoration: none;
+    color: #1F2933;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+a:hover {
+    padding: 5px;
+    text-decoration: none;
+    color: #1f2933d2;
+    background-color: rgba(33, 31, 31, 0.335);
+    border-radius: 5px;
+    font-weight: 700;
+    transition: 0.5s;
+}
+
+.classes-nav {
+    margin-top: 10px;
 }
