@@ -71,40 +71,40 @@ a:hover {
 
 /*Teste*/
 
-.teste-red {
-    min-width: 100px;
-    padding: 10px;
-    justify-content: space-between;
-    color: red;
-    border-bottom: 2px solid black;
-}
+/*.teste-red {*/
+/*    min-width: 100px;*/
+/*    padding: 10px;*/
+/*    justify-content: space-between;*/
+/*    color: red;*/
+/*    border-bottom: 2px solid black;*/
+/*}*/
 
-.time {
-    border-bottom: 2px solid black;
+/*.time {*/
+/*    border-bottom: 2px solid black;*/
 
-}
+/*}*/
 
 
-.teste-green {
-    padding: 10px;
-    min-width: 75px;
-    color: rgb(0, 73, 6);
-    background-color: rgb(0, 73, 6);
-    border-right: 2px solid black;
+/*.teste-green {*/
+/*    padding: 10px;*/
+/*    min-width: 75px;*/
+/*    color: rgb(0, 73, 6);*/
+/*!*  *!*/
+/*!*    border-right: 2px solid black;*!*/
 
-}
+/*}*/
 
-/* achei oque eu queria*/
-.teste-yellow {
-    
-    color: rgb(174, 177, 0);
-    background-color:rgb(174, 177, 0);
-    padding: 10px;
-    margin: 3px;
-    border-radius: 5px;
-    min-width: 110px;
-    white-space: nowrap;
-}
+/*!* achei oque eu queria*!*/
+/*.teste-yellow {*/
+/*    */
+/*    color: rgb(174, 177, 0);*/
+/*    background-color:rgb(174, 177, 0);*/
+/*    padding: 10px;*/
+/*    margin: 3px;*/
+/*    border-radius: 5px;*/
+/*    min-width: 110px;*/
+/*    white-space: nowrap;*/
+/*}*/
 
 
 /*Arrumando a tabela*/

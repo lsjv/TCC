@@ -1,3 +1,4 @@
+from collections import defaultdict
 from core.models import (
     Escola,
     Professor,
@@ -11,49 +12,120 @@ from core.models import (
 def seed():
 
     print("Criando escola...")
-    escola, _ = Escola.objects.get_or_create(nome="Escola Teste")
+    escola, _ = Escola.objects.get_or_create(nome="Escola Trilhas de Futuro")
 
+    # ================================================================
+    # PROFESSORES com carga real extraída dos horários
+    # ================================================================
     print("Criando professores...")
-    carga_maxima_por_professor = {
-        "Ana":      19,
-        "Pedro":    19,
-        "Carlos":   19,
-        "Fernanda": 23,
-        "Mariana":  18,
-        "Juliana":  18,
-        "Roberto":  16,
-        "Lucas":    18,
+    professores_data = {
+        # Enfermagem / Radiologia
+        "HELENITA":  20,
+        "DANIELA":   20,
+        "MÍRIAN":    20,
+        "RAFAEL":    20,
+        "GEISE":     20,
+        "INGRED":    20,
+        "ROBERTA":   20,
+        "ANA JÚLIA": 20,
+        # Informática
+        "VILELA":    20,
+        "PEDRO":     20,
+        "THARLES":   20,
+        "ANDRÉ":     20,
+        # Agropecuária
+        "BRUNO":     20,
+        "ARTHUR":    20,
+        "SAMUEL":    20,
+        "MIRELLE":   20,
     }
 
-    for nome, carga in carga_maxima_por_professor.items():
+    for nome, carga in professores_data.items():
         Professor.objects.get_or_create(
             nome=nome,
             defaults={'carga_maxima_semana': carga}
         )
 
+    # ================================================================
+    # DISCIPLINAS
+    # ================================================================
     print("Criando disciplinas...")
-    disciplinas = [
-        "Matemática",
-        "Língua Portuguesa",
-        "História",
-        "Geografia",
-        "Ciências",
-        "Língua Inglesa",
-        "Educação Física",
-        "Artes",
+    disciplinas_data = [
+        # Enfermagem P26
+        "Assis. a Cli./Pac. em Trat. Cir.",
+        "Assistência em Saúde Coletiva",
+        "Assis. a Cli./Pac. em Trat. Clí.",
+        "Fund. Org. Pr. de Trab. em Enf. I",
+        "Assist. à Criança e à Mulher",
+        "Assistência em Saúde Mental",
+        # Enfermagem 63
+        "Anatomia e Fisio. Humana",
+        "Educação para o Autocuidado",
+        "Pro. da Saúd. e Seg. no Trab.",
+        "Prestação de Primeiros Socorros",
+        "Org. do Pr. de Trab. em Saúde",
+        # Radiologia 55
+        "Noções de Radioterapia",
+        "Gestão de Serviços Radiológicos",
+        "Met. Projeto Conclusão Curso",
+        "Radiologia Odontológica",
+        "Ressonância Magnética",
+        "Tomografia Computadorizada",
+        "Incid.as Radiográficas Especiais",
+        "Mamografia",
+        # Radiologia 65
+        "Bios. nas Ações de Saúde",
+        "Anat. e Fisiol. H. Apl. à Rad.",
+        "Fund. de Enf. Apli. à Radi.",
+        "Psi. das Relações Humanas",
+        "Hig. Profil. e Orien. p/ o Autocuid.",
+        "Primeiros Socorros",
+        "Prom. de Saú. e Seg. no Trab.",
+        # Informática
+        "Redes de Computadores",
+        "Prog. de computadores II",
+        "Desenv. de Softwares III",
+        "Aná. e Proj. de Sist. II",
+        "Gestão de Sist. Ope. III",
+        "Aplicativos para Internet",
+        "Gestão de Sistemas Operacionais I",
+        "Operação de Softwares Aplicativos I",
+        "Desenvolvimentos de Softwares I",
+        "Lógica de Programação",
+        "Inst. e Manut. de Computadores I",
+        "Ling. Tecn. e Trabalho",
+        "Organização Empresarial",
+        # Agropecuária
+        "Avicultura",
+        "Bovinocultura",
+        "Zootecnia Geral",
+        "Suinocultura",
+        "Climatologia",
+        "Fruticultura",
+        "Forragicultura",
+        "Solos",
+        "Culturas Anuais",
+        "Informática Aplicada",
     ]
 
-    for nome in disciplinas:
+    for nome in disciplinas_data:
         Disciplina.objects.get_or_create(nome=nome)
 
+    # ================================================================
+    # TURMAS
+    # ================================================================
     print("Criando turmas...")
     turmas_data = [
-        ("6A", "manha"),
-        ("6B", "manha"),
-        ("7A", "manha"),
-        ("7B", "manha"),
-        ("8A", "manha"),
-        ("9A", "manha"),
+        ("ENF P26 - Mod II", "noturno"),
+        ("ENF 63 - Mod I",   "noturno"),
+        ("RAD 55 - Mod III", "noturno"),
+        ("RAD 65 - Mod I",   "noturno"),
+        ("INFO 52 - Mod III","vespertino"),
+        ("INFO 53/54 - Mod III", "noturno"),
+        ("INFO 64 - Mod I",  "noturno"),
+        ("AGRO 51 - Mod III","noturno"),
+        ("AGRO 61 - Mod I",  "noturno"),
+        ("AGRO 62 - Mod I",  "noturno"),
     ]
 
     for nome, turno in turmas_data:
@@ -62,112 +134,140 @@ def seed():
             escola=escola,
             defaults={'turno': turno}
         )
-    #ERROR
-    
-    print("Criando slots...")
-    for dia in range(5):
-        for aula in range(1, 6):
-            Slot.objects.get_or_create(
-                escola=escola,
-                dia_semana=dia,
-                numero_aula=aula,
-                turno="manha"
-            )
 
+    # ================================================================
+    # SLOTS — 4 aulas por dia (2 antes + 2 depois do intervalo)
+    # ================================================================
+    print("Criando slots...")
+    for turno in ["noturno", "vespertino"]:
+        for dia in range(5):
+            for aula in range(1, 5):  # 4 aulas por dia
+                Slot.objects.get_or_create(
+                    escola=escola,
+                    dia_semana=dia,
+                    numero_aula=aula,
+                    turno=turno
+                )
+
+    # ================================================================
+    # RELAÇÕES TURMA-DISCIPLINA com aulas_semanais reais
+    # ================================================================
     print("Criando relações turma-disciplina...")
 
-    aulas_semanais = {
-        "Matemática":        5,
-        "Língua Portuguesa": 5,
-        "História":          3,
-        "Geografia":         3,
-        "Ciências":          3,
-        "Língua Inglesa":    2,
-        "Educação Física":   2,
-        "Artes":             2,
-    }
+    # Formato: (turma_nome, disciplina_nome, professor_nome, aulas_semanais)
+    relacoes = [
 
-    professor_por_turma_disciplina = {
-        # Matemática
-        ("6A", "Matemática"): "Ana",
-        ("6B", "Matemática"): "Ana",
-        ("7A", "Matemática"): "Ana",
-        ("7B", "Matemática"): "Pedro",
-        ("8A", "Matemática"): "Pedro",
-        ("9A", "Matemática"): "Pedro",
+        # ── ENF P26 – Módulo II ──────────────────────────────────────
+        ("ENF P26 - Mod II", "Assis. a Cli./Pac. em Trat. Cir.",  "HELENITA", 4),
+        ("ENF P26 - Mod II", "Assistência em Saúde Coletiva",      "DANIELA",  4),
+        ("ENF P26 - Mod II", "Assis. a Cli./Pac. em Trat. Clí.",  "HELENITA", 4),
+        ("ENF P26 - Mod II", "Fund. Org. Pr. de Trab. em Enf. I", "MÍRIAN",   4),
+        ("ENF P26 - Mod II", "Assist. à Criança e à Mulher",       "DANIELA",  4),
+        ("ENF P26 - Mod II", "Assistência em Saúde Mental",        "DANIELA",  2),
+        # total: 22 aulas — ajustar carga_maxima de HELENITA e DANIELA
 
-        # Língua Portuguesa
-        ("6A", "Língua Portuguesa"): "Carlos",
-        ("6B", "Língua Portuguesa"): "Carlos",
-        ("7A", "Língua Portuguesa"): "Carlos",
-        ("7B", "Língua Portuguesa"): "Fernanda",
-        ("8A", "Língua Portuguesa"): "Fernanda",
-        ("9A", "Língua Portuguesa"): "Fernanda",
+        # ── ENF 63 – Módulo I ────────────────────────────────────────
+        ("ENF 63 - Mod I", "Anatomia e Fisio. Humana",          "RAFAEL",   4),
+        ("ENF 63 - Mod I", "Educação para o Autocuidado",       "MÍRIAN",   4),
+        ("ENF 63 - Mod I", "Pro. da Saúd. e Seg. no Trab.",     "DANIELA",  4),
+        ("ENF 63 - Mod I", "Prestação de Primeiros Socorros",   "MÍRIAN",   4),
+        ("ENF 63 - Mod I", "Org. do Pr. de Trab. em Saúde",     "DANIELA",  4),
 
-        # História
-        ("6A", "História"): "Mariana",
-        ("6B", "História"): "Mariana",
-        ("7A", "História"): "Mariana",
-        ("7B", "História"): "Mariana",
-        ("8A", "História"): "Mariana",
-        ("9A", "História"): "Mariana",
+        # ── RAD 55 – Módulo III ──────────────────────────────────────
+        ("RAD 55 - Mod III", "Noções de Radioterapia",              "INGRED",   2),
+        ("RAD 55 - Mod III", "Gestão de Serviços Radiológicos",     "GEISE",    2),
+        ("RAD 55 - Mod III", "Met. Projeto Conclusão Curso",        "RAFAEL",   4),
+        ("RAD 55 - Mod III", "Radiologia Odontológica",             "ROBERTA",  2),
+        ("RAD 55 - Mod III", "Ressonância Magnética",               "GEISE",    2),
+        ("RAD 55 - Mod III", "Tomografia Computadorizada",          "INGRED",   4),
+        ("RAD 55 - Mod III", "Incid.as Radiográficas Especiais",    "INGRED",   2),
+        ("RAD 55 - Mod III", "Mamografia",                          "GEISE",    2),
 
-        # Geografia
-        ("6A", "Geografia"): "Juliana",
-        ("6B", "Geografia"): "Juliana",
-        ("7A", "Geografia"): "Juliana",
-        ("7B", "Geografia"): "Juliana",
-        ("8A", "Geografia"): "Juliana",
-        ("9A", "Geografia"): "Juliana",
+        # ── RAD 65 – Módulo I ────────────────────────────────────────
+        ("RAD 65 - Mod I", "Bios. nas Ações de Saúde",              "MÍRIAN",   2),
+        ("RAD 65 - Mod I", "Anat. e Fisiol. H. Apl. à Rad.",        "INGRED",   4),
+        ("RAD 65 - Mod I", "Fund. de Enf. Apli. à Radi.",           "DANIELA",  2),
+        ("RAD 65 - Mod I", "Psi. das Relações Humanas",             "ANA JÚLIA",2),
+        ("RAD 65 - Mod I", "Hig. Profil. e Orien. p/ o Autocuid.", "HELENITA", 4),
+        ("RAD 65 - Mod I", "Primeiros Socorros",                    "MÍRIAN",   2),
+        ("RAD 65 - Mod I", "Prom. de Saú. e Seg. no Trab.",        "MÍRIAN",   4),
 
-        # Ciências — Roberto: 6A/6B/7A/7B | Lucas: 8A/9A
-        ("6A", "Ciências"): "Roberto",
-        ("6B", "Ciências"): "Roberto",
-        ("7A", "Ciências"): "Roberto",
-        ("7B", "Ciências"): "Roberto",
-        ("8A", "Ciências"): "Lucas",
-        ("9A", "Ciências"): "Lucas",
+        # ── INFO 52 – Módulo III – Vespertino ────────────────────────
+        ("INFO 52 - Mod III", "Redes de Computadores",           "VILELA",  4),
+        ("INFO 52 - Mod III", "Prog. de computadores II",        "PEDRO",   4),
+        ("INFO 52 - Mod III", "Desenv. de Softwares III",        "PEDRO",   2),
+        ("INFO 52 - Mod III", "Aná. e Proj. de Sist. II",        "VILELA",  2),
+        ("INFO 52 - Mod III", "Gestão de Sist. Ope. III",        "VILELA",  4),
+        ("INFO 52 - Mod III", "Aplicativos para Internet",       "VILELA",  2),
+        ("INFO 52 - Mod III", "Met. Projeto Conclusão Curso",    "RAFAEL",  2),
 
-        # Língua Inglesa
-        ("6A", "Língua Inglesa"): "Lucas",
-        ("6B", "Língua Inglesa"): "Lucas",
-        ("7A", "Língua Inglesa"): "Lucas",
-        ("7B", "Língua Inglesa"): "Lucas",
-        ("8A", "Língua Inglesa"): "Lucas",
-        ("9A", "Língua Inglesa"): "Lucas",
+        # ── INFO 53/54 – Módulo III – Noturno ───────────────────────
+        ("INFO 53/54 - Mod III", "Prog. de computadores II",     "PEDRO",   2),
+        ("INFO 53/54 - Mod III", "Met. Projeto Conclusão Curso", "RAFAEL",  4),
+        ("INFO 53/54 - Mod III", "Desenv. de Softwares III",     "PEDRO",   2),
+        ("INFO 53/54 - Mod III", "Gestão de Sist. Ope. III",     "VILELA",  4),
+        ("INFO 53/54 - Mod III", "Redes de Computadores",        "THARLES", 4),
+        ("INFO 53/54 - Mod III", "Aplicativos para Internet",    "THARLES", 2),
+        ("INFO 53/54 - Mod III", "Aná. e Proj. de Sist. II",     "VILELA",  2),
 
-        # Educação Física
-        ("6A", "Educação Física"): "Ana",
-        ("6B", "Educação Física"): "Ana",
-        ("7A", "Educação Física"): "Pedro",
-        ("7B", "Educação Física"): "Pedro",
-        ("8A", "Educação Física"): "Carlos",
-        ("9A", "Educação Física"): "Carlos",
+        # ── INFO 64 – Módulo I ───────────────────────────────────────
+        ("INFO 64 - Mod I", "Organização Empresarial",              "ANDRÉ",   4),
+        ("INFO 64 - Mod I", "Lógica de Programação",                "PEDRO",   4),
+        ("INFO 64 - Mod I", "Gestão de Sistemas Operacionais I",    "VILELA",  4),
+        ("INFO 64 - Mod I", "Operação de Softwares Aplicativos I",  "VILELA",  2),
+        ("INFO 64 - Mod I", "Desenvolvimentos de Softwares I",      "PEDRO",   4),
+        ("INFO 64 - Mod I", "Inst. e Manut. de Computadores I",     "THARLES", 4),
+        ("INFO 64 - Mod I", "Ling. Tecn. e Trabalho",               "ANDRÉ",   2),
 
-        # Artes — Fernanda: 6A/6B/7A/7B | Roberto: 8A/9A
-        ("6A", "Artes"): "Fernanda",
-        ("6B", "Artes"): "Fernanda",
-        ("7A", "Artes"): "Fernanda",
-        ("7B", "Artes"): "Fernanda",
-        ("8A", "Artes"): "Roberto",
-        ("9A", "Artes"): "Roberto",
-    }
+        # ── AGRO 51 – Módulo III ─────────────────────────────────────
+        ("AGRO 51 - Mod III", "Avicultura",                  "BRUNO",  4),
+        ("AGRO 51 - Mod III", "Bovinocultura",               "SAMUEL", 4),
+        ("AGRO 51 - Mod III", "Zootecnia Geral",             "BRUNO",  4),
+        ("AGRO 51 - Mod III", "Suinocultura",                "BRUNO",  4),
+        ("AGRO 51 - Mod III", "Met. Projeto Conclusão Curso","RAFAEL", 4),
 
-    turmas = Turma.objects.filter(escola=escola)
-    disciplinas_qs = Disciplina.objects.all()
+        # ── AGRO 61 – Módulo I ───────────────────────────────────────
+        ("AGRO 61 - Mod I", "Climatologia",                  "ARTHUR", 4),
+        ("AGRO 61 - Mod I", "Fruticultura",                  "SAMUEL", 4),
+        ("AGRO 61 - Mod I", "Forragicultura",                "BRUNO",  4),
+        ("AGRO 61 - Mod I", "Solos",                         "ARTHUR", 4),
+        ("AGRO 61 - Mod I", "Informática Aplicada",          "ANDRÉ",  4),
+        ("AGRO 61 - Mod I", "Culturas Anuais",               "MIRELLE",2),
 
-    for turma in turmas:
-        for disciplina in disciplinas_qs:
-            nome_prof = professor_por_turma_disciplina[(turma.nome, disciplina.nome)]
-            professor = Professor.objects.get(nome=nome_prof)
+        # ── AGRO 62 – Módulo I ───────────────────────────────────────
+        ("AGRO 62 - Mod I", "Fruticultura",                  "SAMUEL", 4),
+        ("AGRO 62 - Mod I", "Climatologia",                  "ARTHUR", 4),
+        ("AGRO 62 - Mod I", "Forragicultura",                "BRUNO",  4),
+        ("AGRO 62 - Mod I", "Solos",                         "ARTHUR", 4),
+        ("AGRO 62 - Mod I", "Informática Aplicada",          "ANDRÉ",  4),
+        ("AGRO 62 - Mod I", "Culturas Anuais",               "MIRELLE",4),
+    ]
 
-            TurmaDisciplina.objects.get_or_create(
-                turma=turma,
-                disciplina=disciplina,
-                defaults={
-                    'professor': professor,
-                    'aulas_semanais': aulas_semanais[disciplina.nome]
-                }
-            )
+    for turma_nome, disc_nome, prof_nome, aulas in relacoes:
+        turma      = Turma.objects.get(nome=turma_nome, escola=escola)
+        disciplina = Disciplina.objects.get(nome=disc_nome)
+        professor  = Professor.objects.get(nome=prof_nome)
 
-    print("Seed finalizado!")
+        TurmaDisciplina.objects.get_or_create(
+            turma=turma,
+            disciplina=disciplina,
+            professor=professor,
+            defaults={'aulas_semanais': aulas}
+        )
+
+    # ================================================================
+    # Atualizar carga_maxima_semana real por professor
+    # ================================================================
+    print("Ajustando cargas máximas reais...")
+
+    cargas_reais = defaultdict(int)
+    for _, _, prof_nome, aulas in relacoes:
+        cargas_reais[prof_nome] += aulas
+
+    for prof_nome, carga in cargas_reais.items():
+        Professor.objects.filter(nome=prof_nome).update(
+            carga_maxima_semana=carga
+        )
+        print(f"  {prof_nome}: {carga} aulas/semana")
+
+    print("\nSeed finalizado!")
