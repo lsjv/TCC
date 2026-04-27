@@ -1,0 +1,61 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{% url 'dashboard' %}">Início</a> ›
+    <a href="{% url 'escola_detail' escola.id %}">{{ escola.nome }}</a> ›
+    <a href="{% url 'disciplina_list' escola.id %}">Disciplinas</a> ›
+    {{ titulo }}
+</div>
+
+<div class="page-header-row">
+    <div class="page-title">{{ titulo }}</div>
+</div>
+
+<div class="section">
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-wrap">
+            {% for field in form %}
+            <div class="form-group">
+                <label>{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<p class="help-text">{{ field.help_text }}</p>{% endif %}
+                {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="form-group">
+                <label>Prévia</label>
+                <div id="preview-badge" style="display:inline-block;padding:4px 12px;border-radius:6px;font-weight:600;font-size:14px;border:2px solid #ccc;">Exemplo de disciplina</div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Salvar</button>
+                <a href="{{ cancel_url }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+(function () {
+    var bg = document.getElementById('id_cor_bg');
+    var borda = document.getElementById('id_cor_borda');
+    var texto = document.getElementById('id_cor_texto');
+    var preview = document.getElementById('preview-badge');
+
+    function update() {
+        preview.style.background = bg ? bg.value : '#F1EFE8';
+        preview.style.borderColor = borda ? borda.value : '#5F5E5A';
+        preview.style.color = texto ? texto.value : '#444441';
+    }
+
+    [bg, borda, texto].forEach(function (el) {
+        if (el) el.addEventListener('input', update);
+    });
+    update();
+})();
+</script>
+{% endblock %}

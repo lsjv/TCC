@@ -1,0 +1,150 @@
+{% extends 'core/base.html' %}
+{% load dict_extras %}
+{% block title %}Slots — {{ escola.nome }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{% url 'dashboard' %}">Início</a> ›
+    <a href="{% url 'escola_detail' escola.id %}">{{ escola.nome }}</a> ›
+    Gerenciar Slots
+</div>
+
+<div class="page-header-row">
+    <div>
+        <div class="page-title">Slots — {{ escola.nome }}</div>
+        <div class="page-subtitle">Defina os horários disponíveis por turno. O algoritmo usa esses slots para alocar aulas.</div>
+    </div>
+    <div class="actions">
+        <a href="{% url 'escola_detail' escola.id %}" class="btn btn-secondary">← Voltar</a>
+    </div>
+</div>
+
+{# ── Formulário de criação em lote ── #}
+<div class="section">
+    <div class="section-header">
+        <span class="section-title">Criar slots em lote</span>
+    </div>
+    <form method="post" id="form-slots">
+        {% csrf_token %}
+        <div class="form-wrap">
+            <div class="form-group">
+                <label for="id_turno">{{ form.turno.label }}</label>
+                {{ form.turno }}
+                {% if form.turno.errors %}<ul class="errorlist">{% for e in form.turno.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <div class="form-group">
+                <label for="id_num_aulas">{{ form.num_aulas.label }}</label>
+                {{ form.num_aulas }}
+                <div class="help-text">Exemplo: 4 aulas/dia → aulas 1, 2, 3 e 4 para cada dia marcado.</div>
+                {% if form.num_aulas.errors %}<ul class="errorlist">{% for e in form.num_aulas.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <div class="form-group">
+                <label>{{ form.dias.label }}</label>
+                <div class="checkbox-row">
+                    {% for choice in form.dias %}
+                        <label class="checkbox-pill">
+                            {{ choice.tag }}
+                            <span>{{ choice.choice_label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                {% if form.dias.errors %}<ul class="errorlist">{% for e in form.dias.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">+ Criar slots</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{# ── Slots existentes por turno ── #}
+{% if grupos %}
+    {% for turno, dias_dict in grupos.items %}
+    <div class="section">
+        <div class="section-header">
+            <span class="section-title">Turno: {{ turno|capfirst }}</span>
+            <form method="post" action="{% url 'slot_delete_turno' escola.id %}"
+                  onsubmit="return confirm('Excluir todos os slots do turno {{ turno }}? Aulas alocadas também serão removidas.')">
+                {% csrf_token %}
+                <input type="hidden" name="turno" value="{{ turno }}">
+                <button type="submit" class="btn btn-danger btn-sm">🗑 Excluir turno</button>
+            </form>
+        </div>
+        <div class="slot-grid">
+            {% for dia, slots in dias_dict.items %}
+            <div class="slot-col">
+                <div class="slot-col-header">{{ dias_nomes|list_index:dia }}</div>
+                {% for slot in slots %}
+                <div class="slot-pill">{{ slot.numero_aula }}ª aula</div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+<div class="section">
+    <div class="empty-state">
+        <p style="margin-bottom:12px;">Nenhum slot cadastrado para esta escola.</p>
+        <p>Use o formulário acima para criar os horários disponíveis.</p>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.checkbox-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+.checkbox-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: #374151;
+    transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+}
+.checkbox-pill input { display: none; }
+.checkbox-pill:has(input:checked) {
+    border-color: #1b1b7d;
+    background: #eef0ff;
+    color: #1b1b7d;
+    font-weight: 600;
+}
+.slot-grid {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.slot-col {
+    min-width: 110px;
+}
+.slot-col-header {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7280;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e5e7eb;
+}
+.slot-pill {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 0.82rem;
+    color: #374151;
+    margin-bottom: 4px;
+    text-align: center;
+}
+</style>
+{% endblock %}

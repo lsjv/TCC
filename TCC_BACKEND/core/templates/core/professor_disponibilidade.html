@@ -1,0 +1,161 @@
+{% extends 'core/base.html' %}
+{% load dict_extras %}
+{% block title %}Disponibilidade — {{ prof.nome }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{% url 'dashboard' %}">Início</a> ›
+    <a href="{% url 'escola_detail' prof.escola.id %}">{{ prof.escola.nome }}</a> ›
+    <a href="{% url 'professor_list' prof.escola.id %}">Professores</a> ›
+    {{ prof.nome }}
+</div>
+
+<div class="page-header-row">
+    <div>
+        <div class="page-title">Disponibilidade — {{ prof.nome }}</div>
+        <div class="page-subtitle">
+            Marque os horários em que o professor <strong>está disponível</strong>.
+            Se nenhum horário for marcado, o algoritmo assume disponibilidade total.
+        </div>
+    </div>
+    <div class="actions">
+        <a href="{% url 'professor_list' %}" class="btn btn-secondary">← Voltar</a>
+    </div>
+</div>
+
+<div class="section">
+    <form method="post" id="form-disp">
+        {% csrf_token %}
+
+        {% if numeros_aula %}
+        <div class="disp-wrap">
+            <table class="disp-table">
+                <thead>
+                    <tr>
+                        <th class="aula-col">Aula</th>
+                        {% for idx, nome_dia in dias %}
+                        <th>{{ nome_dia }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for num in numeros_aula %}
+                    <tr>
+                        <td class="aula-col"><strong>{{ num }}ª</strong></td>
+                        {% for idx, nome_dia in dias %}
+                        <td>
+                            <label class="disp-cell {% if idx|stringformat:'s'|add:','|add:num|stringformat:'s' in '' %}{% endif %}">
+                                <input
+                                    type="checkbox"
+                                    name="slot_{{ idx }}_{{ num }}"
+                                    {% if idx|make_tuple:num in disp_atual %}checked{% endif %}
+                                    id="slot_{{ idx }}_{{ num }}"
+                                >
+                                <span class="disp-check"></span>
+                            </label>
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="disp-actions">
+            <button type="button" class="btn btn-outline btn-sm" onclick="toggleAll(true)">Marcar tudo</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="toggleAll(false)">Desmarcar tudo</button>
+        </div>
+
+        <div class="form-actions" style="margin-top:24px;">
+            <button type="submit" class="btn btn-primary">Salvar disponibilidade</button>
+            <a href="{% url 'professor_list' prof.escola.id %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+
+        {% else %}
+        <div class="empty-state">
+            <p style="margin-bottom:12px;">Nenhum slot cadastrado no sistema ainda.</p>
+            <p>Cadastre slots em pelo menos uma escola primeiro para poder configurar a disponibilidade.</p>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+<style>
+.disp-wrap { overflow-x: auto; }
+.disp-table {
+    border-collapse: collapse;
+    min-width: 480px;
+}
+.disp-table th {
+    padding: 10px 18px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7280;
+    text-align: center;
+    border-bottom: 2px solid #e5e7eb;
+}
+.aula-col {
+    text-align: left !important;
+    color: #374151 !important;
+    font-size: 0.85rem !important;
+    white-space: nowrap;
+    padding-right: 24px !important;
+}
+.disp-table td {
+    padding: 8px 18px;
+    text-align: center;
+    border-bottom: 1px solid #f3f4f6;
+}
+.disp-table tbody tr:hover td { background: #f9fafb; }
+
+/* Custom checkbox */
+.disp-cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.disp-cell input[type=checkbox] { display: none; }
+.disp-check {
+    width: 26px;
+    height: 26px;
+    border: 2px solid #d1d5db;
+    border-radius: 7px;
+    background: #f9fafb;
+    transition: background 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.disp-check::after {
+    content: '✓';
+    font-size: 0.95rem;
+    color: white;
+    display: none;
+}
+.disp-cell input:checked + .disp-check {
+    background: #1b1b7d;
+    border-color: #1b1b7d;
+}
+.disp-cell input:checked + .disp-check::after { display: block; }
+.disp-cell:hover .disp-check { border-color: #1b1b7d; }
+
+.disp-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+}
+</style>
+
+<script>
+function toggleAll(checked) {
+    document.querySelectorAll('#form-disp input[type=checkbox]').forEach(cb => {
+        cb.checked = checked;
+    });
+}
+</script>
+{% endblock %}

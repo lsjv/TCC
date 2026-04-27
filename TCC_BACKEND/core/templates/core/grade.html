@@ -1,87 +1,67 @@
-{% load dict_extras %}
+{% extends 'core/base.html' %}
 {% load static %}
+{% block title %}Grade — {{ turma.nome }}{% endblock %}
 
-<link rel="stylesheet" href="{% static 'css/global.css' %}">
+{% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/grade.css' %}">
+{% endblock %}
 
+{% block content %}
+<div class="breadcrumb">
+    <a href="{% url 'dashboard' %}">Início</a> ›
+    <a href="{% url 'escola_detail' turma.escola.id %}">{{ turma.escola.nome }}</a> ›
+    Grade — {{ turma.nome }}
+</div>
 
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title class="name-class">Grade — Turma {{ turma.nome }}</title>
-    
-</head>
-<body>
-
-    <header>
-        <nav>
-        
-        </nav>
-    </header>
-
-    <header>
-        <div class="header">
-            <h1 class="class-name">Grade de Horários — <!--O turma tava duplicando ai apaguei--> {{ turma.nome }}</h1>
-            <p class="school-name">{{ turma.escola.nome }} &middot; <span class="study-shift">{{ turma.turno|capfirst }}</span></p>
-        </div>
-    </header>
-    <span class="dividing-line"></span>
-
-    <div class="information-soft">
-        <h2 class="title-software">Gerenciar horários</h2>
-        <p class="subtitle-software">Organize sua grade de aulas facilmente.</p>
+<div class="page-header-row">
+    <div>
+        <div class="page-title">Grade — {{ turma.nome }}</div>
+        <div class="page-subtitle">{{ turma.escola.nome }} &middot; {{ turma.turno|capfirst }}</div>
     </div>
+    <div class="actions">
+        <a href="{% url 'grade_pdf' turma.id %}" class="btn btn-outline">📄 Exportar PDF</a>
+        <a href="{% url 'escola_detail' turma.escola.id %}" class="btn btn-secondary">← Voltar</a>
+    </div>
+</div>
 
-    <nav class="classes-nav">
-        {% for t in turma.escola.turma_set.all %}
-            <a href="{% url 'grade_turma' t.id %}"
-                class="{% if t.id == turma.id %}ativa{% endif %}">
-                {{ t.nome }}
-            </a>
-        {% endfor %}
-    </nav>
-    
-    <div class="grade-wrap">
-        <table class="grade">
-            <tr>
-                <th class="time">Horário</th>
-                {% for dia in dias %}
-                    <th class="teste-red font-config">{{ dia }}</th>
-                {% endfor %}
-            </tr>
+<nav class="classes-nav">
+    {% for t in turma.escola.turma_set.all %}
+        <a href="{% url 'grade_turma' t.id %}"
+            class="{% if t.id == turma.id %}ativa{% endif %}">
+            {{ t.nome }}
+        </a>
+    {% endfor %}
+</nav>
 
-            {% for linha in grade %}
-            <tr>
-                <td class="teste-green">{{ forloop.counter }}ª aula</td>
-
-                {% for aula in linha %}
-                <td>
-                    {% if aula %}
-                        {% with disc=aula.turma_disciplina.disciplina.nome %}
-                        {% with cor=cores_disciplina|get_item:disc %}
-                        <div class="teste-yellow"
-                                style="background:{{ cor.bg }};border-left-color:{{ cor.border }}">
-                            <span class="disc" style="color:{{ cor.text }}">
-                                {{ disc }}
-                            </span>
-                            <span class="prof" style="color:{{ cor.text }}">
-                                {{ aula.turma_disciplina.professor.nome }}
-                            </span>
-                        </div>
-                        {% endwith %}
-                        {% endwith %}
-                    {% else %}
-                        <div class="vazia"></div>
-                    {% endif %}
-                </td>
-                {% endfor %}
-            </tr>
+<div class="grade-wrap">
+    <table class="grade">
+        <tr>
+            <th class="time">Horário</th>
+            {% for dia in dias %}
+                <th class="font-config">{{ dia }}</th>
             {% endfor %}
-        </table>
-    </div>
+        </tr>
 
-</body>
-</html>
+        {% for linha in grade %}
+        <tr>
+            <td>{{ forloop.counter }}ª aula</td>
+
+            {% for aula in linha %}
+            <td>
+                {% if aula %}
+                    {% with d=aula.turma_disciplina.disciplina %}
+                    <div style="background:{{ d.cor_bg }};border-left-color:{{ d.cor_borda }}">
+                        <span class="disc" style="color:{{ d.cor_texto }}">{{ d.nome }}</span>
+                        <span class="prof" style="color:{{ d.cor_texto }}">{{ aula.turma_disciplina.professor.nome }}</span>
+                    </div>
+                    {% endwith %}
+                {% else %}
+                    <div class="vazia"></div>
+                {% endif %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{% url 'dashboard' %}">Início</a> ›
+    <a href="{% url 'escola_detail' turma.escola.id %}">{{ turma.escola.nome }}</a> ›
+    <a href="{% url 'turma_disciplina_list' turma.id %}">{{ turma.nome }}</a> ›
+    {{ titulo }}
+</div>
+
+<div class="page-header-row">
+    <div class="page-title">{{ titulo }}</div>
+</div>
+
+<div class="section">
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-wrap">
+            {% for field in form %}
+            <div class="form-group">
+                <label>{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<p class="help-text">{{ field.help_text }}</p>{% endif %}
+                {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            {% endfor %}
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Salvar</button>
+                <a href="{{ cancel_url }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

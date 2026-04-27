@@ -1,0 +1,50 @@
+{% extends 'core/base.html' %}
+{% block title %}Início{% endblock %}
+
+{% block content %}
+<div class="page-header-row">
+    <div>
+        <div class="page-title">Escolas</div>
+        <div class="page-subtitle">Selecione uma escola para gerenciar seus horários.</div>
+    </div>
+    <div class="actions">
+        <a href="{% url 'escola_create' %}" class="btn btn-primary">+ Nova Escola</a>
+    </div>
+</div>
+
+{% if escolas %}
+<div class="section">
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Escola</th>
+                    <th>Turmas</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for escola in escolas %}
+                <tr>
+                    <td><strong>{{ escola.nome }}</strong></td>
+                    <td>{{ escola.num_turmas }} turma{{ escola.num_turmas|pluralize }}</td>
+                    <td class="table-actions">
+                        <a href="{% url 'escola_detail' escola.id %}" class="btn btn-primary btn-sm">Gerenciar</a>
+                        <a href="{% url 'escola_edit' escola.id %}" class="btn btn-secondary btn-sm">Editar</a>
+                        <a href="{% url 'escola_delete' escola.id %}" class="btn btn-danger btn-sm">Excluir</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="section">
+    <div class="empty-state">
+        <p style="margin-bottom:16px;">Nenhuma escola cadastrada ainda.</p>
+        <a href="{% url 'escola_create' %}" class="btn btn-primary">+ Criar primeira escola</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

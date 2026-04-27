@@ -1,0 +1,57 @@
+{% extends 'core/base.html' %}
+{% block title %}Professores — {{ escola.nome }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{% url 'dashboard' %}">Início</a> ›
+    <a href="{% url 'escola_detail' escola.id %}">{{ escola.nome }}</a> ›
+    Professores
+</div>
+
+<div class="page-header-row">
+    <div>
+        <div class="page-title">Professores</div>
+        <div class="page-subtitle">{{ professores.count }} professor{{ professores.count|pluralize:",es" }} em {{ escola.nome }}</div>
+    </div>
+    <div class="actions">
+        <a href="{% url 'escola_detail' escola.id %}" class="btn btn-secondary">← Escola</a>
+        <a href="{% url 'professor_create' escola.id %}" class="btn btn-primary">+ Novo Professor</a>
+    </div>
+</div>
+
+<div class="section">
+    {% if professores %}
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Carga máxima semanal</th>
+                    <th>Consec. máx.</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prof in professores %}
+                <tr>
+                    <td><strong>{{ prof.nome }}</strong></td>
+                    <td>{{ prof.carga_maxima_semana }} aulas</td>
+                    <td>{% if prof.max_aulas_consecutivas == 0 %}Sem limite{% else %}{{ prof.max_aulas_consecutivas }}{% endif %}</td>
+                    <td class="table-actions">
+                        <a href="{% url 'professor_disponibilidade' prof.id %}" class="btn btn-outline btn-sm">📅 Disponibilidade</a>
+                        <a href="{% url 'professor_edit' prof.id %}" class="btn btn-secondary btn-sm">Editar</a>
+                        <a href="{% url 'professor_delete' prof.id %}" class="btn btn-danger btn-sm">Excluir</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p style="margin-bottom:12px;">Nenhum professor cadastrado nesta escola.</p>
+        <a href="{% url 'professor_create' escola.id %}" class="btn btn-primary">+ Adicionar professor</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

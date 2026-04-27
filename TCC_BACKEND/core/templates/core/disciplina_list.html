@@ -1,0 +1,59 @@
+{% extends 'core/base.html' %}
+{% block title %}Disciplinas — {{ escola.nome }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{% url 'dashboard' %}">Início</a> ›
+    <a href="{% url 'escola_detail' escola.id %}">{{ escola.nome }}</a> ›
+    Disciplinas
+</div>
+
+<div class="page-header-row">
+    <div>
+        <div class="page-title">Disciplinas</div>
+        <div class="page-subtitle">{{ disciplinas.count }} disciplina{{ disciplinas.count|pluralize }} em {{ escola.nome }}</div>
+    </div>
+    <div class="actions">
+        <a href="{% url 'escola_detail' escola.id %}" class="btn btn-secondary">← Escola</a>
+        <a href="{% url 'disciplina_create' escola.id %}" class="btn btn-primary">+ Nova Disciplina</a>
+    </div>
+</div>
+
+<div class="section">
+    {% if disciplinas %}
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Disciplina</th>
+                    <th>Cor</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for disc in disciplinas %}
+                <tr>
+                    <td>
+                        <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:{{ disc.cor_bg }};border:1.5px solid {{ disc.cor_borda }};vertical-align:middle;margin-right:6px;"></span>
+                        <strong>{{ disc.nome }}</strong>
+                    </td>
+                    <td>
+                        <span class="color-swatch" style="background:{{ disc.cor_bg }};border-color:{{ disc.cor_borda }};width:28px;height:18px;border-radius:4px;display:inline-block;border:2px solid {{ disc.cor_borda }};"></span>
+                    </td>
+                    <td class="table-actions">
+                        <a href="{% url 'disciplina_edit' disc.id %}" class="btn btn-secondary btn-sm">Editar</a>
+                        <a href="{% url 'disciplina_delete' disc.id %}" class="btn btn-danger btn-sm">Excluir</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p style="margin-bottom:12px;">Nenhuma disciplina cadastrada nesta escola.</p>
+        <a href="{% url 'disciplina_create' escola.id %}" class="btn btn-primary">+ Adicionar disciplina</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

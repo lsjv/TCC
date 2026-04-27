@@ -1,0 +1,78 @@
+{% extends 'core/base.html' %}
+{% block title %}Disciplinas — {{ turma.nome }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{% url 'dashboard' %}">Início</a> ›
+    <a href="{% url 'escola_detail' turma.escola.id %}">{{ turma.escola.nome }}</a> ›
+    {{ turma.nome }}
+</div>
+
+<div class="page-header-row">
+    <div>
+        <div class="page-title">{{ turma.nome }}</div>
+        <div class="page-subtitle">{{ turma.turno|capfirst }} · {{ relacoes.count }} disciplina{{ relacoes.count|pluralize }}</div>
+    </div>
+    <div class="actions">
+        <a href="{% url 'turma_disciplina_create' turma.id %}" class="btn btn-primary">+ Adicionar Disciplina</a>
+    </div>
+</div>
+
+<div class="section">
+    <div class="stats-row" style="margin-bottom:16px;">
+        <div class="stat-card {% if total_aulas > total_slots %}danger{% elif total_aulas == total_slots %}ok{% else %}warning{% endif %}">
+            <span class="stat-value">{{ total_aulas }} / {{ total_slots }}</span>
+            <span class="stat-label">aulas semanais usadas</span>
+        </div>
+        {% if total_aulas > total_slots %}
+        <div class="alert alert-danger" style="margin-top:8px;">
+            O total de aulas ({{ total_aulas }}) excede os slots disponíveis ({{ total_slots }}). O horário não poderá ser gerado.
+        </div>
+        {% elif total_aulas < total_slots %}
+        <div class="alert alert-warning" style="margin-top:8px;">
+            Turma com {{ total_aulas }} de {{ total_slots }} aulas preenchidas. Você pode adicionar mais disciplinas ou deixar slots vazios.
+        </div>
+        {% else %}
+        <div class="alert alert-success" style="margin-top:8px;">
+            Turma com carga horária completa ({{ total_slots }} aulas/semana).
+        </div>
+        {% endif %}
+    </div>
+
+    {% if relacoes %}
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Disciplina</th>
+                    <th>Professor</th>
+                    <th>Aulas/semana</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rel in relacoes %}
+                <tr>
+                    <td>
+                        <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:{{ rel.disciplina.cor_bg }};border:1.5px solid {{ rel.disciplina.cor_borda }};vertical-align:middle;margin-right:6px;"></span>
+                        <strong>{{ rel.disciplina.nome }}</strong>
+                    </td>
+                    <td>{{ rel.professor.nome }}</td>
+                    <td>{{ rel.aulas_semanais }}</td>
+                    <td class="table-actions">
+                        <a href="{% url 'turma_disciplina_edit' rel.id %}" class="btn btn-secondary btn-sm">Editar</a>
+                        <a href="{% url 'turma_disciplina_delete' rel.id %}" class="btn btn-danger btn-sm">Remover</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p style="margin-bottom:12px;">Nenhuma disciplina vinculada a esta turma.</p>
+        <a href="{% url 'turma_disciplina_create' turma.id %}" class="btn btn-primary">+ Adicionar disciplina</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

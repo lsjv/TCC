@@ -1,0 +1,128 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ escola.nome }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+    <a href="{% url 'dashboard' %}">Início</a> › {{ escola.nome }}
+</div>
+
+<div class="page-header-row">
+    <div>
+        <div class="page-title">{{ escola.nome }}</div>
+        <div class="page-subtitle">{{ turmas.count }} turma{{ turmas.count|pluralize }} cadastrada{{ turmas.count|pluralize }}</div>
+    </div>
+    <div class="actions">
+        <a href="{% url 'escola_edit' escola.id %}" class="btn btn-secondary">Editar escola</a>
+        <a href="{% url 'slot_list' escola.id %}" class="btn btn-outline">⏱ Slots</a>
+        <form method="post" action="{% url 'gerar_horario' escola.id %}" style="display:inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">⚙ Gerar Horário</button>
+        </form>
+    </div>
+</div>
+
+{# ── Atalhos rápidos: Professores e Disciplinas ── #}
+<div class="quick-links">
+    <a href="{% url 'professor_list' escola.id %}" class="quick-link-card">
+        <span class="quick-link-icon">👨‍🏫</span>
+        <span class="quick-link-label">Professores</span>
+        <span class="quick-link-count">{{ num_professores }}</span>
+    </a>
+    <a href="{% url 'disciplina_list' escola.id %}" class="quick-link-card">
+        <span class="quick-link-icon">📚</span>
+        <span class="quick-link-label">Disciplinas</span>
+        <span class="quick-link-count">{{ num_disciplinas }}</span>
+    </a>
+</div>
+
+{# ── Turmas ── #}
+<div class="section">
+    <div class="section-header">
+        <span class="section-title">Turmas</span>
+        <a href="{% url 'turma_create' escola.id %}" class="btn btn-primary btn-sm">+ Nova Turma</a>
+    </div>
+
+    {% if turmas %}
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Turma</th>
+                    <th>Turno</th>
+                    <th>Disciplinas</th>
+                    <th>Aulas/semana</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for turma in turmas %}
+                <tr>
+                    <td><strong>{{ turma.nome }}</strong></td>
+                    <td>{{ turma.turno|capfirst }}</td>
+                    <td>{{ turma.num_disciplinas }}</td>
+                    <td>
+                        {% with total=turma.total_aulas|default:0 %}
+                        {{ total }}
+                        <div class="aulas-bar-wrap">
+                            <div class="aulas-bar-bg">
+                                <div class="aulas-bar-fill {% if total > 20 %}danger{% elif total == 20 %}ok{% else %}warning{% endif %}"
+                                     style="width:{% if total > 20 %}100{% else %}{% widthratio total 20 100 %}{% endif %}%"></div>
+                            </div>
+                        </div>
+                        {% endwith %}
+                    </td>
+                    <td class="table-actions">
+                        <a href="{% url 'grade_turma' turma.id %}" class="btn btn-secondary btn-sm">Grade</a>
+                        <a href="{% url 'turma_disciplina_list' turma.id %}" class="btn btn-outline btn-sm">Disciplinas</a>
+                        <a href="{% url 'turma_edit' turma.id %}" class="btn btn-secondary btn-sm">Editar</a>
+                        <a href="{% url 'turma_delete' turma.id %}" class="btn btn-danger btn-sm">Excluir</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p style="margin-bottom:12px;">Nenhuma turma cadastrada.</p>
+        <a href="{% url 'turma_create' escola.id %}" class="btn btn-primary">+ Criar primeira turma</a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.quick-links {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+.quick-link-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: white;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px 20px;
+    text-decoration: none;
+    color: #111827;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    flex: 1;
+    min-width: 160px;
+}
+.quick-link-card:hover {
+    border-color: #1b1b7d;
+    box-shadow: 0 2px 8px rgba(27,27,125,0.1);
+}
+.quick-link-icon { font-size: 1.4rem; }
+.quick-link-label { font-weight: 600; font-size: 0.95rem; flex: 1; }
+.quick-link-count {
+    background: #eef0ff;
+    color: #1b1b7d;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 3px 10px;
+    border-radius: 12px;
+}
+</style>
+{% endblock %}

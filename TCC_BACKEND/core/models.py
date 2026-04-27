@@ -18,25 +18,39 @@ class Escola(models.Model):
 class Professor(models.Model):
     """
     Modelo que representa um professor.
-    Cada professor pode lecionar várias disciplinas para diferentes turmas.
+    Cada professor pertence a uma escola e pode lecionar várias disciplinas para diferentes turmas.
     """
-    nome = models.CharField(max_length=100)  # Nome completo do professor
-    carga_maxima_semana = models.IntegerField(default=20)  # Número máximo de aulas que o professor pode dar por semana
+    escola = models.ForeignKey(
+        'Escola',
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        related_name='professores'
+    )
+    nome = models.CharField(max_length=100)
+    carga_maxima_semana = models.IntegerField(default=20)
+    max_aulas_consecutivas = models.IntegerField(default=4)  # 0 = sem restrição
 
     def __str__(self):
-        """Retorna o nome do professor como representação em string"""
         return self.nome
 
 
 class Disciplina(models.Model):
     """
     Modelo que representa uma disciplina/matéria escolar.
-    Exemplos: Matemática, Português, História, etc.
+    Cada disciplina pertence a uma escola específica.
     """
-    nome = models.CharField(max_length=100)  # Nome da disciplina
+    escola = models.ForeignKey(
+        'Escola',
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        related_name='disciplinas'
+    )
+    nome      = models.CharField(max_length=100)
+    cor_bg    = models.CharField(max_length=7, default="#F1EFE8")
+    cor_borda = models.CharField(max_length=7, default="#5F5E5A")
+    cor_texto = models.CharField(max_length=7, default="#444441")
 
     def __str__(self):
-        """Retorna o nome da disciplina como representação em string"""
         return self.nome
 
 
