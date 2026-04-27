@@ -3,8 +3,34 @@ from django.db import transaction
 from collections import defaultdict
 import random
 import time
+from collections import defaultdict
+from core.models import TurmaDisciplina, Slot
 
+slots_noturno = Slot.objects.filter(escola_id=2, turno="noturno").count()
+slots_vespertino = Slot.objects.filter(escola_id=2, turno="vespertino").count()
+print(f"Slots noturno: {slots_noturno}")
+print(f"Slots vespertino: {slots_vespertino}")
 
+relacoes = TurmaDisciplina.objects.filter(
+    turma__escola_id=2
+).select_related('professor', 'turma')
+
+carga_prof_turno = defaultdict(lambda: defaultdict(int))
+for rel in relacoes:
+    carga_prof_turno[rel.professor.nome][rel.turma.turno] += rel.aulas_semanais
+
+print("\n=== Carga por professor/turno vs slots ===")
+for prof, turnos in sorted(carga_prof_turno.items()):
+    for turno, carga in turnos.items():
+        slots = slots_noturno if turno == "noturno" else slots_vespertino
+        status = "✅" if carga <= slots else "❌"
+        print(f"{status} {prof:<12} {turno:<12} {carga} aulas / {slots} slots")
+
+print("\n=== Professores em múltiplos turnos ===")
+for prof, turnos in sorted(carga_prof_turno.items()):
+    if len(turnos) > 1:
+        total = sum(turnos.values())
+        print(f"⚠️  {prof}: {dict(turnos)} = {total} aulas totais")
 def gerar_horario_baseado_professor(escola_id, max_rodadas=10, max_por_rodada=500_000, debug=True):
 
     inicio = time.time()
